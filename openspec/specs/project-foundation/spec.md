@@ -19,12 +19,22 @@ Aplikasi SHALL menggunakan Tailwind CSS v4 sebagai satu-satunya basis styling, d
 
 ### Requirement: Routing SPA dengan rute placeholder
 
-Aplikasi SHALL menyediakan routing sisi klien dengan rute `/` (monitoring publik), `/login`, dan `/dashboard`, masing-masing berupa halaman placeholder. Rute yang tidak dikenal SHALL menampilkan halaman "tidak ditemukan".
+Aplikasi SHALL menyediakan routing sisi klien dengan rute berikut:
+- `/`: monitoring publik, placeholder;
+- `/login`: form login Service Advisor, lihat capability `sa-authentication`;
+- `/dashboard`: rute terproteksi, kontennya masih placeholder.
+
+Rute yang tidak dikenal SHALL menampilkan halaman "tidak ditemukan".
 
 #### Scenario: Navigasi ke rute yang dikenal
 
 - **WHEN** pengguna membuka `/login`
-- **THEN** halaman placeholder login ditampilkan tanpa reload penuh saat berpindah dari rute lain
+- **THEN** halaman login ditampilkan tanpa reload penuh saat berpindah dari rute lain
+
+#### Scenario: Rute terproteksi
+
+- **WHEN** pengguna yang belum login membuka `/dashboard`
+- **THEN** router mengarahkan ke `/login`, bukan menampilkan placeholder dashboard
 
 #### Scenario: Rute tidak dikenal
 
