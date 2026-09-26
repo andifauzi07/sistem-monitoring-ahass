@@ -203,9 +203,10 @@ Menunggu Antrian → Diperiksa → Dikerjakan → Selesai Dikerjakan → Sudah D
 ### 8.3 Modul Kelola Service
 
 - FR-3.1: **Tambah Service Baru** — input data: nomor polisi, nama pembawa, nomor WA, jenis motor, kilometer, keluhan/masalah.
-- FR-3.2: **Edit Masalah Service** — mengubah data keluhan/catatan servis yang sudah tercatat.
-- FR-3.3: **Selesaikan Service** — mengubah status menjadi selesai, mencatat `tanggal_selesai`.
+- FR-3.2: **Edit Layanan Service** — mengubah data layanan yang sudah tercatat (nomor polisi, nama pembawa, nomor WA, jenis motor, kilometer, masalah; status diubah lewat FR-3.3). Kontak pada data kendaraan (`pelanggan`) ikut diperbarui. Layanan berstatus `Sudah Diambil` terkunci dan tidak dapat diedit.
+- FR-3.3: **Ubah Status Service** — Service Advisor memindahkan status maju atau mundur satu langkah sesuai urutan Bagian 7.7 (mekanik melapor, Service Advisor yang mengklik). `tanggal_selesai` terisi saat status menjadi `Selesai Dikerjakan` dan dikosongkan bila mundur dari status itu. `Sudah Diambil` bersifat final (data terkunci). Aturan transisi ditegakkan di database.
 - FR-3.4: Setiap perubahan status tercatat ke `riwayat_status` dan memicu update realtime (Supabase Realtime Subscription) ke tampilan pelanggan.
+- FR-3.5: **Hapus Layanan Service** — layanan yang terlanjur dibuat dapat dihapus, hanya selama berstatus `Menunggu Antrian`.
 
 ### 8.4 Modul Riwayat Service
 
@@ -386,7 +387,7 @@ Mekanisme pengiriman notifikasi WhatsApp **belum ditentukan**. Sebelum agent men
 
 ### **Iterasi 2 — Modul Kelola Service (Core CRUD)**
 
-- Implementasi FR-3.1 – FR-3.4 (tanpa realtime dulu, tanpa WhatsApp dulu).
+- Implementasi FR-3.1 – FR-3.5 (tanpa realtime dulu, tanpa WhatsApp dulu).
 - **DoD:** Service Advisor bisa menambah, mengedit, dan menyelesaikan data servis; data tersimpan di Supabase.
 
 ### **Iterasi 3 — Dashboard & Riwayat**

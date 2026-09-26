@@ -4,7 +4,7 @@ import { isSupabaseConfigured, supabaseConfigError } from '../lib/supabase';
 // import { ConnectionStatus } from './ConnectionStatus';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-	`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+	`inline-flex min-h-11 items-center rounded-md px-2 text-sm font-medium transition-colors sm:px-3 ${
 		isActive ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white'
 	}`;
 
@@ -55,10 +55,15 @@ export function Layout() {
 									className={navClass}>
 									Dashboard
 								</NavLink>
+								<NavLink
+										to="/servis"
+									className={navClass}>
+									Servis
+								</NavLink>
 								<button
 									type="button"
 									onClick={handleSignOut}
-									className="rounded-md px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white">
+									className="inline-flex min-h-11 items-center rounded-md px-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:px-3">
 									Keluar
 								</button>
 							</>
