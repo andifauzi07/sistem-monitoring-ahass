@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { useAuth } from '../lib/authContext'
 
 export function DashboardPage() {
@@ -10,6 +11,12 @@ export function DashboardPage() {
         Halo, <span className="font-medium">{user?.email}</span>. Dashboard operasional dikerjakan
         pada Iterasi 3.
       </p>
+      <Link
+        to="/servis"
+        className="inline-flex min-h-11 items-center rounded-md bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
+      >
+        Kelola Servis
+      </Link>
     </div>
   )
 }

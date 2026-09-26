@@ -10,6 +10,49 @@ Skema database disimpan sebagai migrasi SQL terversi di `migrations/`. Semua fil
 
 Alternatif bila memakai Supabase CLI: `supabase link --project-ref <ref>` lalu `supabase db push`.
 
+## Migrasi Iterasi 2 (Kelola Service)
+
+Jalankan **setelah** `0001_init_schema.sql`, dengan cara yang sama di SQL Editor: salin isi `migrations/0002_kelola_service.sql`, tempel, lalu **Run**. Jalankan sebelum aplikasi Iterasi 2 dipakai, karena aplikasi memanggil RPC `daftar_servis`, `ubah_servis`, dan `hapus_servis`.
+
+Migrasi ini hanya menambah trigger dan fungsi (tidak mengubah kolom atau data). Untuk membatalkannya:
+
+```sql
+drop trigger if exists trg_aturan_layanan on public.layanan_service;
+drop trigger if exists trg_cegah_hapus_layanan on public.layanan_service;
+drop function if exists public.aturan_layanan_service();
+drop function if exists public.cegah_hapus_layanan();
+drop function if exists public.daftar_servis(text, text, text, text, integer, text);
+drop function if exists public.ubah_servis(uuid, text, text, text, text, integer, text);
+drop function if exists public.hapus_servis(uuid);
+drop function if exists public.bersihkan_input_servis(text, text, text, text, integer, text);
+```
+
+Query verifikasi (jalankan di SQL Editor; gunakan data uji lalu hapus). Editor berjalan sebagai role `postgres`, jadi `auth.uid()` bernilai null: untuk uji RPC yang butuh login, gunakan aplikasi.
+
+```sql
+-- 1. Trigger terpasang (harus 2 baris)
+select tgname from pg_trigger
+where tgrelid = 'public.layanan_service'::regclass
+  and tgname in ('trg_aturan_layanan', 'trg_cegah_hapus_layanan');
+
+-- 2. RPC ada (harus 3 baris)
+select proname from pg_proc
+where pronamespace = 'public'::regnamespace
+  and proname in ('daftar_servis', 'ubah_servis', 'hapus_servis');
+
+-- 3. anon tidak boleh mengeksekusi RPC (semua harus false)
+select has_function_privilege('anon', 'public.daftar_servis(text,text,text,text,integer,text)', 'execute'),
+       has_function_privilege('anon', 'public.ubah_servis(uuid,text,text,text,text,integer,text)', 'execute'),
+       has_function_privilege('anon', 'public.hapus_servis(uuid)', 'execute');
+
+-- 4. Validasi input (harus ERROR: DATA_TIDAK_VALID, detail nomor_wa)
+select * from public.bersihkan_input_servis('DC1234AB', 'Budi', 'abc', 'Vario', 1000, 'Rem bunyi');
+
+-- 5. Input valid dibersihkan (nopol 'DC1234AB', wa '081234567890')
+select * from public.bersihkan_input_servis('dc 1234-ab', ' Budi ', '0812 3456-7890', 'Vario', 1000, 'Rem bunyi');
+```
+
+Aturan status (transisi ±1 langkah, `tanggal_selesai`, kunci `Sudah Diambil`, hapus terbatas) paling mudah diuji lewat aplikasi mengikuti daftar uji manual pada `tasks.md` change `iterasi-2-kelola-service`.
 ## Membuat akun Service Advisor
 
 Aplikasi tidak memiliki halaman registrasi. Buat akun lewat **Authentication → Users → Add user → Create new user** (centang *Auto Confirm User*).
@@ -78,5 +121,8 @@ curl "$VITE_SUPABASE_URL/rest/v1/layanan_service?select=*" \
 | `layanan_service` | Satu baris per kunjungan servis. Maksimal satu servis aktif (≠ `Sudah Diambil`) per kendaraan |
 | `riwayat_status` | Diisi otomatis oleh trigger saat insert dan saat status berubah |
 | `riwayat_penugasan_mekanik` | Log penugasan mekanik (diisi mulai Iterasi 4b) |
+| `trg_aturan_layanan` | Trigger: servis baru selalu `Menunggu Antrian`; status hanya ±1 langkah; `tanggal_selesai` otomatis saat `Selesai Dikerjakan`; `Sudah Diambil` terkunci |
+| `trg_cegah_hapus_layanan` | Trigger: hapus layanan hanya saat `Menunggu Antrian` |
+| `daftar_servis(...)` / `ubah_servis(...)` / `hapus_servis(id)` | RPC untuk `authenticated` (Iterasi 2). Atomik: pelanggan dan layanan diubah dalam satu transaksi |
 | `cek_status(nopol)` | RPC publik (anon). Hanya mengembalikan nopol, jenis motor, status, dan tanggal |
 | RLS | `authenticated` = akses penuh; `anon` = tanpa akses tabel |

@@ -6,6 +6,10 @@ import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PublicMonitoringPage } from './pages/PublicMonitoringPage'
+import { ServisBaruPage } from './pages/ServisBaruPage'
+import { ServisDetailPage } from './pages/ServisDetailPage'
+import { ServisEditPage } from './pages/ServisEditPage'
+import { ServisListPage } from './pages/ServisListPage'
 
 export const router = createBrowserRouter([
   {
@@ -19,7 +23,13 @@ export const router = createBrowserRouter([
       {
         // Rute Service Advisor pada iterasi berikutnya ditambahkan sebagai child di sini.
         element: <RequireAuth />,
-        children: [{ path: 'dashboard', element: <DashboardPage /> }],
+        children: [
+          { path: 'dashboard', element: <DashboardPage /> },
+          { path: 'servis', element: <ServisListPage /> },
+          { path: 'servis/baru', element: <ServisBaruPage /> },
+          { path: 'servis/:id', element: <ServisDetailPage /> },
+          { path: 'servis/:id/edit', element: <ServisEditPage /> },
+        ],
       },
       { path: '*', element: <NotFoundPage /> },
     ],

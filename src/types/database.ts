@@ -1,4 +1,4 @@
-// Tipe ditulis manual mengikuti supabase/migrations/0001_init_schema.sql.
+// Tipe ditulis manual mengikuti supabase/migrations/0001_init_schema.sql dan 0002_kelola_service.sql.
 // Bentuknya sama dengan hasil `supabase gen types typescript`, jadi bisa diganti langsung nanti.
 
 export const STATUS_SERVIS = [
@@ -262,6 +262,51 @@ export type Database = {
       normalize_nopol: {
         Args: { nopol: string }
         Returns: string
+      }
+      bersihkan_input_servis: {
+        Args: {
+          p_nomor_polisi: string
+          p_nama_pembawa: string
+          p_nomor_wa: string
+          p_jenis_motor: string
+          p_kilometer: number
+          p_masalah: string
+        }
+        Returns: {
+          nomor_polisi: string
+          nama_pembawa: string
+          nomor_wa: string
+          jenis_motor: string
+          kilometer: number
+          masalah: string
+        }
+      }
+      daftar_servis: {
+        Args: {
+          p_nomor_polisi: string
+          p_nama_pembawa: string
+          p_nomor_wa: string
+          p_jenis_motor: string
+          p_kilometer: number
+          p_masalah: string
+        }
+        Returns: string
+      }
+      ubah_servis: {
+        Args: {
+          p_id: string
+          p_nomor_polisi: string
+          p_nama_pembawa: string
+          p_nomor_wa: string
+          p_jenis_motor: string
+          p_kilometer: number
+          p_masalah: string
+        }
+        Returns: undefined
+      }
+      hapus_servis: {
+        Args: { p_id: string }
+        Returns: undefined
       }
     }
     Enums: {
