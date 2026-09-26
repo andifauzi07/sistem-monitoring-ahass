@@ -1,75 +1,46 @@
-# React + TypeScript + Vite
+# Sistem Monitoring Layanan Kendaraan — AHASS Kota Mamuju
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplikasi web untuk memantau status servis kendaraan secara real-time. Service Advisor mengelola data servis, sedangkan pelanggan cukup memasukkan nomor polisi (tanpa login) untuk melihat progres. Spesifikasi lengkap ada di [`docs/PRD.md`](docs/PRD.md).
 
-Currently, two official plugins are available:
+**Stack:** React + TypeScript (Vite) · Tailwind CSS v4 · Supabase (PostgreSQL, Auth, Realtime) · Vercel
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Setup lokal
 
-## React Compiler
+Prasyarat: Node.js 20+ dan sebuah project Supabase.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+cp .env.example .env       # isi VITE_SUPABASE_URL & VITE_SUPABASE_PUBLISHABLE_KEY
+npm run dev                # http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Jalankan migrasi database sesuai [`supabase/README.md`](supabase/README.md). Indikator di footer akan menampilkan **"Terhubung ke database"** bila URL/key valid dan migrasi sudah terpasang.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Perintah
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Perintah | Fungsi |
+|---|---|
+| `npm run dev` | Server pengembangan dengan HMR |
+| `npm run build` | Type-check (`tsc -b`) + build produksi ke `dist/` |
+| `npm run lint` | ESLint |
+| `npm run preview` | Menyajikan hasil build secara lokal |
+
+## Struktur
 
 ```
+src/
+  components/   komponen UI bersama (Layout, ConnectionStatus)
+  lib/          supabase client, utilitas nomor polisi
+  pages/        halaman per rute
+  types/        tipe database (mengikuti migrasi SQL)
+  router.tsx    definisi rute
+supabase/
+  migrations/   skema database (SQL terversi)
+openspec/       proposal & spesifikasi perubahan per iterasi
+```
+
+## Deployment (Vercel)
+
+1. Push repo ke GitHub, lalu **Import Project** di Vercel (preset Vite terdeteksi otomatis).
+2. Isi Environment Variables `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY`.
+3. Deploy. `vercel.json` mengarahkan semua rute ke `index.html` agar deep link seperti `/dashboard` berfungsi.

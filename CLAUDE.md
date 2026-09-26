@@ -29,7 +29,7 @@ Tabel Supabase: `service_advisors`, `mekanik`, `pelanggan`, `layanan_service`, `
 Pengembangan dipecah menjadi iterasi 0–10 (lihat `docs/PRD.md` Bagian 13). Kerjakan sesuai urutan kecuali pengguna memutuskan lain. Setiap iterasi harus menghasilkan build yang berjalan (`npm run dev` / build sukses) sebelum lanjut ke iterasi berikutnya.
 
 _(Update baris ini setiap kali sebuah iterasi selesai, agar sesi berikutnya tahu progres terakhir tanpa membaca ulang seluruh riwayat percakapan)_
-**Iterasi terakhir yang selesai: — (belum dimulai)**
+**Iterasi terakhir yang selesai: Iterasi 0 — Setup Fondasi** (OpenSpec change `iterasi-0-setup`; migrasi & koneksi Supabase terverifikasi. Deploy Vercel ditandai selesai atas keputusan pengguna tetapi belum diverifikasi oleh agent — cek deep link `/dashboard` saat pertama deploy.)
 
 ## Aturan Kerja (Guardrails) — WAJIB DIPATUHI
 
@@ -45,4 +45,16 @@ _(Update baris ini setiap kali sebuah iterasi selesai, agar sesi berikutnya tahu
 
 ## Build & Test Commands
 
-_(Belum diisi — Iterasi 0 di `docs/PRD.md` belum dikerjakan. Setelah project di-scaffold, tambahkan perintah `npm run dev`, `npm run build`, `npm run test`, dsb. di sini agar setiap sesi Claude Code tahu cara menjalankan/menguji proyek tanpa harus ditanyakan ulang.)_
+- `npm run dev` — server pengembangan (butuh `.env` dari `.env.example`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`)
+- `npm run build` — type-check + build produksi (wajib lolos sebelum iterasi dianggap selesai)
+- `npm run lint` — ESLint
+- Belum ada test runner (`npm run test` belum tersedia).
+- Migrasi DB: `supabase/migrations/*.sql`, dijalankan manual via Supabase SQL Editor (lihat `supabase/README.md`). Tipe TS di `src/types/database.ts` ditulis manual — **perbarui setiap kali skema berubah**.
+
+## Keputusan yang Sudah Dikunci (Iterasi 0)
+
+- **Status servis** = Postgres enum `status_servis`: `Menunggu Antrian` → `Diperiksa` → `Dikerjakan` → `Selesai Dikerjakan` → `Sudah Diambil` (dikonfirmasi pengguna).
+- **Pelanggan = kendaraan**: `pelanggan.nomor_polisi` unik; `layanan_service` menyimpan snapshot `nama_pembawa`/`nomor_wa` per kunjungan; maksimal satu servis aktif (≠ `Sudah Diambil`) per kendaraan.
+- **Nomor polisi** dinormalisasi di DB (`normalize_nopol`: huruf kapital, tanpa spasi/tanda baca); padanan TS di `src/lib/nopol.ts`.
+- **Akses publik** hanya lewat RPC `cek_status(nopol)` (SECURITY DEFINER, kolom tersanitasi). Role `anon` tidak punya akses tabel → realtime publik (Iterasi 6) tidak bisa memakai `postgres_changes` langsung.
+- `riwayat_status` diisi oleh trigger DB, bukan oleh kode frontend.
