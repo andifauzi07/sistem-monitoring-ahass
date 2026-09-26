@@ -1,7 +1,7 @@
 # public-status-access Specification
 
 ## Purpose
-TBD - created by archiving change iterasi-0-setup. Update Purpose after archive.
+Kontrak akses baca publik (tanpa login) terhadap status servis berdasarkan nomor polisi, melalui RPC tersanitasi yang tidak membocorkan data pribadi pelanggan.
 ## Requirements
 ### Requirement: RPC cek_status untuk publik
 Database SHALL menyediakan fungsi `cek_status(nopol text)` bertipe `SECURITY DEFINER` yang dapat dieksekusi oleh role `anon` dan `authenticated`. Fungsi SHALL menormalisasi input dengan aturan yang sama seperti penyimpanan nomor polisi, lalu mengembalikan daftar layanan servis yang cocok.

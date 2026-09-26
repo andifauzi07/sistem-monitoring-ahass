@@ -1,7 +1,7 @@
 # project-foundation Specification
 
 ## Purpose
-TBD - created by archiving change iterasi-0-setup. Update Purpose after archive.
+Fondasi aplikasi frontend: styling Tailwind, routing SPA, Supabase client dari environment, indikator koneksi database, serta build dan deployment Vercel.
 ## Requirements
 ### Requirement: Styling berbasis Tailwind CSS
 

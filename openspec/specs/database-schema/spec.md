@@ -1,7 +1,7 @@
 # database-schema Specification
 
 ## Purpose
-TBD - created by archiving change iterasi-0-setup. Update Purpose after archive.
+Skema PostgreSQL/Supabase untuk seluruh entitas sistem monitoring servis AHASS (PRD Bagian 7): enum status servis, tabel inti, constraint, trigger log, dan Row Level Security.
 ## Requirements
 ### Requirement: Enum status servis
 Database SHALL mendefinisikan tipe enum `status_servis` dengan nilai berurutan: `Menunggu Antrian`, `Diperiksa`, `Dikerjakan`, `Selesai Dikerjakan`, `Sudah Diambil`. Kolom `layanan_service.status` MUST bertipe enum ini dengan default `Menunggu Antrian`.
