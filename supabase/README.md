@@ -15,6 +15,26 @@ Alternatif bila memakai Supabase CLI: `supabase link --project-ref <ref>` lalu `
 Aplikasi tidak memiliki halaman registrasi. Buat akun lewat **Authentication → Users → Add user → Create new user** (centang *Auto Confirm User*).
 Trigger `on_auth_user_created` otomatis membuat baris di `service_advisors`. Untuk mengisi nama, tambahkan user metadata `{"nama": "Nama Lengkap"}`; jika kosong, nama diambil dari bagian depan email.
 
+## Kebijakan akun & keamanan Auth
+
+Trigger `on_auth_user_created` menjadikan setiap user di `auth.users` sebagai Service Advisor dengan akses penuh (RLS `authenticated`), dan publishable key ada di bundle JavaScript publik. Karena itu sign-up publik **harus dimatikan**:
+
+1. Buka **Supabase Dashboard → Authentication → Sign In / Providers**.
+2. Matikan **Allow new users to sign up**.
+3. Matikan **Allow anonymous sign-ins**.
+4. Klik **Save**.
+
+Fitur **Authentication → Users → Add user** tetap berfungsi walaupun sign-up publik mati, jadi akun Service Advisor tetap bisa dibuat oleh admin.
+
+Verifikasi bahwa sign-up ditolak (harus mengembalikan error seperti `signup_disabled`, dan tidak ada user baru di `auth.users`):
+
+```bash
+curl -X POST "$VITE_SUPABASE_URL/auth/v1/signup" \
+  -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"uji-signup@example.com","password":"password-uji-123"}'
+```
+
 ## Query verifikasi
 
 Jalankan di SQL Editor setelah migrasi:
