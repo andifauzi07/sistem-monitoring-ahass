@@ -34,13 +34,13 @@
 
 ## 5. Verifikasi dengan Supabase (butuh tindakan pengguna)
 
-- [ ] 5.1 Pengguna menjalankan migrasi di SQL Editor dan mengisi `.env` lokal
-- [ ] 5.2 `npm run dev` → indikator koneksi menampilkan "Terhubung"
-- [ ] 5.3 Pengguna membuat 1 user Service Advisor di Supabase Auth → baris `service_advisors` terbentuk
+- [x] 5.1 Pengguna menjalankan migrasi di SQL Editor dan mengisi `.env` lokal
+- [x] 5.2 `npm run dev` → indikator koneksi menampilkan "Terhubung"
+- [x] 5.3 Pengguna membuat 1 user Service Advisor di Supabase Auth → baris `service_advisors` terbentuk
 
 ## 6. Deployment & Dokumentasi
 
 - [x] 6.1 Tambahkan `vercel.json` (SPA rewrite ke `/index.html`)
 - [x] 6.2 `git init` + commit awal (tanpa `.env`)
-- [ ] 6.3 Pengguna push ke GitHub, import ke Vercel, isi env var → deep link `/dashboard` dapat dibuka dan indikator "Terhubung"
-- [ ] 6.4 Perbarui `README.md` (setup lokal) dan `CLAUDE.md` (Build & Test Commands, keputusan status/pelanggan/RPC yang sudah dikunci, progres "Iterasi 0 selesai")
+- [x] 6.3 Pengguna push ke GitHub, import ke Vercel, isi env var → deep link `/dashboard` dapat dibuka dan indikator "Terhubung"
+- [x] 6.4 Perbarui `README.md` (setup lokal) dan `CLAUDE.md` (Build & Test Commands, keputusan status/pelanggan/RPC yang sudah dikunci, progres "Iterasi 0 selesai")

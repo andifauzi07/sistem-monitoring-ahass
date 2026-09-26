@@ -29,7 +29,7 @@ Tabel Supabase: `service_advisors`, `mekanik`, `pelanggan`, `layanan_service`, `
 Pengembangan dipecah menjadi iterasi 0–10 (lihat `docs/PRD.md` Bagian 13). Kerjakan sesuai urutan kecuali pengguna memutuskan lain. Setiap iterasi harus menghasilkan build yang berjalan (`npm run dev` / build sukses) sebelum lanjut ke iterasi berikutnya.
 
 _(Update baris ini setiap kali sebuah iterasi selesai, agar sesi berikutnya tahu progres terakhir tanpa membaca ulang seluruh riwayat percakapan)_
-**Iterasi terakhir yang selesai: — (belum dimulai)**
+**Iterasi terakhir yang selesai: Iterasi 0 — Setup Fondasi** (OpenSpec change `iterasi-0-setup`; migrasi & koneksi Supabase terverifikasi. Deploy Vercel ditandai selesai atas keputusan pengguna tetapi belum diverifikasi oleh agent — cek deep link `/dashboard` saat pertama deploy.)
 
 ## Aturan Kerja (Guardrails) — WAJIB DIPATUHI
 
