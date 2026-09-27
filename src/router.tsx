@@ -6,6 +6,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PublicMonitoringPage } from './pages/PublicMonitoringPage'
+import { RiwayatPage } from './pages/RiwayatPage'
 import { ServisBaruPage } from './pages/ServisBaruPage'
 import { ServisDetailPage } from './pages/ServisDetailPage'
 import { ServisEditPage } from './pages/ServisEditPage'
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
           { path: 'servis/baru', element: <ServisBaruPage /> },
           { path: 'servis/:id', element: <ServisDetailPage /> },
           { path: 'servis/:id/edit', element: <ServisEditPage /> },
+          { path: 'riwayat', element: <RiwayatPage /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

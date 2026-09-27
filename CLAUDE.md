@@ -29,7 +29,7 @@ Tabel Supabase: `service_advisors`, `mekanik`, `pelanggan`, `layanan_service`, `
 Pengembangan dipecah menjadi iterasi 0–10 (lihat `docs/PRD.md` Bagian 13). Kerjakan sesuai urutan kecuali pengguna memutuskan lain. Setiap iterasi harus menghasilkan build yang berjalan (`npm run dev` / build sukses) sebelum lanjut ke iterasi berikutnya.
 
 _(Update baris ini setiap kali sebuah iterasi selesai, agar sesi berikutnya tahu progres terakhir tanpa membaca ulang seluruh riwayat percakapan)_
-**Iterasi terakhir yang selesai: Iterasi 2 — Kelola Service (Core CRUD)** (OpenSpec change `iterasi-2-kelola-service`; halaman `/servis`, `/servis/baru`, `/servis/:id`, `/servis/:id/edit`; tambah/edit/ubah status/hapus layanan lewat RPC `daftar_servis`/`ubah_servis`/`hapus_servis` dan trigger di migrasi `0002_kelola_service.sql`. Uji manual dikonfirmasi lolos oleh pengguna.)
+**Iterasi terakhir yang selesai: Iterasi 3 — Dashboard & Riwayat** (OpenSpec change `iterasi-3-dashboard-riwayat`, diarsipkan di `openspec/changes/archive/2026-09-27-iterasi-3-dashboard-riwayat`; halaman `/dashboard` (kartu Total Unit Entry di Pit, kartu Mekanik yang Hadir, tabel Aktifitas Hari Ini) dan halaman baru `/riwayat` (filter rentang tanggal + nomor polisi untuk servis `Sudah Diambil`) lewat query baca di `src/lib/dashboard.ts`/`src/lib/riwayat.ts`, tanpa RPC/migrasi baru. Spec baru `sa-dashboard` dan `service-history` sudah disinkronkan ke `openspec/specs/`. Uji manual dikonfirmasi lolos oleh pengguna.)
 
 ## Aturan Kerja (Guardrails) — WAJIB DIPATUHI
 
