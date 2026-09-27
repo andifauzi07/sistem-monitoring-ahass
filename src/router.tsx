@@ -2,8 +2,10 @@ import { createBrowserRouter } from 'react-router'
 import { GuestOnly } from './components/GuestOnly'
 import { Layout } from './components/Layout'
 import { RequireAuth } from './components/RequireAuth'
+import { AkunPage } from './pages/AkunPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
+import { MekanikPage } from './pages/MekanikPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PublicMonitoringPage } from './pages/PublicMonitoringPage'
 import { RiwayatPage } from './pages/RiwayatPage'
@@ -22,7 +24,6 @@ export const router = createBrowserRouter([
         children: [{ path: 'login', element: <LoginPage /> }],
       },
       {
-        // Rute Service Advisor pada iterasi berikutnya ditambahkan sebagai child di sini.
         element: <RequireAuth />,
         children: [
           { path: 'dashboard', element: <DashboardPage /> },
@@ -31,6 +32,8 @@ export const router = createBrowserRouter([
           { path: 'servis/:id', element: <ServisDetailPage /> },
           { path: 'servis/:id/edit', element: <ServisEditPage /> },
           { path: 'riwayat', element: <RiwayatPage /> },
+          { path: 'mekanik', element: <MekanikPage /> },
+          { path: 'akun', element: <AkunPage /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

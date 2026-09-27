@@ -65,6 +65,16 @@ export function Layout() {
 									className={navClass}>
 									Riwayat
 								</NavLink>
+								<NavLink
+									to="/mekanik"
+									className={navClass}>
+									Mekanik
+								</NavLink>
+								<NavLink
+									to="/akun"
+									className={navClass}>
+									Akun
+								</NavLink>
 								<button
 									type="button"
 									onClick={handleSignOut}

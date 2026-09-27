@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { Hasil, PesanServis } from './servisErrors'
 
-type Keadaan<T> = { loader: () => Promise<Hasil<T>>; hasil: Hasil<T> }
+type HasilGenerik<T, E> = { data: T; error: null } | { data: null; error: E }
+
+type Keadaan<T, E> = { loader: () => Promise<HasilGenerik<T, E>>; hasil: HasilGenerik<T, E> }
 
 /**
  * Memuat data async. `loader` harus stabil (useCallback); saat identitasnya berubah
  * (mis. id di URL berganti) data dianggap sedang dimuat. `muatUlang()` mengambil ulang
  * tanpa mengosongkan data lama, sehingga daftar tidak berkedip.
  */
-export function useMuat<T>(loader: () => Promise<Hasil<T>>) {
+export function useMuat<T, E>(loader: () => Promise<HasilGenerik<T, E>>) {
   const [tick, setTick] = useState(0)
-  const [keadaan, setKeadaan] = useState<Keadaan<T> | null>(null)
+  const [keadaan, setKeadaan] = useState<Keadaan<T, E> | null>(null)
 
   useEffect(() => {
     let dibatalkan = false
@@ -28,7 +29,7 @@ export function useMuat<T>(loader: () => Promise<Hasil<T>>) {
   return {
     loading: !sesuai,
     data: sesuai ? keadaan.hasil.data : null,
-    error: (sesuai ? keadaan.hasil.error : null) as PesanServis | null,
+    error: sesuai ? keadaan.hasil.error : null,
     muatUlang,
   }
 }
