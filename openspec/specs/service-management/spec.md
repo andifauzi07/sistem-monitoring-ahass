@@ -92,9 +92,10 @@ Setiap servis aktif di daftar dan di halaman detail SHALL memiliki tombol maju s
 - Perubahan MUST menyertakan status saat ini sebagai syarat. Bila status di database sudah berbeda, UI SHALL menampilkan pesan bahwa status sudah berubah lalu memuat ulang data.
 - Langkah menuju `Selesai Dikerjakan` dan `Sudah Diambil` MUST didahului dialog konfirmasi. Dialog untuk `Sudah Diambil` menegaskan bahwa aksi ini final.
 - Tombol MUST dinonaktifkan selama permintaan berjalan agar ketukan ganda tidak memajukan status dua kali.
+- Tombol "→ Diperiksa" pada servis berstatus `Menunggu Antrian` yang belum memiliki mekanik yang ditugaskan (`mekanik_id` bernilai `null`) SHALL ditampilkan dalam keadaan nonaktif, baik di halaman daftar maupun detail, karena database menolak transisi ini tanpa mekanik.
 
 #### Scenario: Maju tanpa konfirmasi
-- **WHEN** SA mengetuk "→ Diperiksa" pada servis `Menunggu Antrian`
+- **WHEN** SA mengetuk "→ Diperiksa" pada servis `Menunggu Antrian` yang sudah memiliki mekanik yang ditugaskan
 - **THEN** status menjadi `Diperiksa` tanpa dialog konfirmasi
 
 #### Scenario: Menyelesaikan servis
@@ -112,6 +113,14 @@ Setiap servis aktif di daftar dan di halaman detail SHALL memiliki tombol maju s
 #### Scenario: Status sudah diubah di tablet lain
 - **WHEN** SA mengetuk "→ Dikerjakan" pada data lama, padahal servis itu sudah `Dikerjakan` di database
 - **THEN** status tidak maju ke tahap berikutnya, pesan "status sudah berubah" tampil, dan data dimuat ulang
+
+#### Scenario: Tombol nonaktif tanpa mekanik
+- **WHEN** SA membuka daftar servis atau detail servis untuk sebuah servis `Menunggu Antrian` yang `mekanik_id`-nya masih `null`
+- **THEN** tombol "→ Diperiksa" tampil nonaktif (tidak dapat diketuk), baik di halaman daftar maupun detail
+
+#### Scenario: Tombol aktif kembali setelah mekanik ditugaskan
+- **WHEN** SA menugaskan mekanik ke servis `Menunggu Antrian` yang sebelumnya belum punya mekanik, lalu membuka kembali halaman daftar atau detailnya
+- **THEN** tombol "→ Diperiksa" tampil aktif dan dapat diketuk
 
 ### Requirement: Batalkan perubahan status
 Setelah perubahan status maju berhasil, kecuali ke `Sudah Diambil`, aplikasi SHALL menampilkan toast yang menyebut status baru beserta tombol "Batalkan" selama sekitar 5 detik. Menekan "Batalkan" SHALL mengembalikan status ke nilai sebelumnya dengan syarat status saat ini masih sama dengan status baru tersebut.

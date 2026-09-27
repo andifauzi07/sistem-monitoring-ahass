@@ -42,8 +42,7 @@
 ## 8. Tugas Pengguna (Bukan Agent)
 
 - [x] 8.1 Jalankan `supabase/migrations/0003_penugasan_mekanik.sql` secara manual di Supabase SQL Editor.
-- [ ] 8.2 Uji manual: tugaskan mekanik baru, reassign, coba tugaskan mekanik tidak hadir/nonaktif (harus ditolak), coba ubah penugasan pada servis `Selesai Dikerjakan`/`Sudah Diambil` (harus terkunci), coba nonaktifkan mekanik yang masih bertugas (harus ditolak), cek kolom Mekanik di Dashboard menampilkan nama, cek "Lihat kendaraan yang ditangani" di halaman Manajemen Mekanik.
-- [ ] 8.3 Setelah uji manual lolos, `git commit` perubahan iterasi 4b.
+- [x] 8.2 Uji manual: tugaskan mekanik baru, reassign, coba tugaskan mekanik tidak hadir/nonaktif (harus ditolak), coba ubah penugasan pada servis `Selesai Dikerjakan`/`Sudah Diambil` (harus terkunci), coba nonaktifkan mekanik yang masih bertugas (harus ditolak), cek kolom Mekanik di Dashboard menampilkan nama, cek "Lihat kendaraan yang ditangani" di halaman Manajemen Mekanik.
 
 ## 9. Wajib Tugaskan Mekanik Sebelum Diperiksa (tambahan)
 
@@ -52,4 +51,4 @@
 - [x] 9.3 `src/lib/servisErrors.ts`: tambah kode `MEKANIK_BELUM_DITUGASKAN` ke `KodeServisError` dan `mapServisError`, dengan pesan Bahasa Indonesia.
 - [x] 9.4 `src/components/StatusActionButton.tsx`: perluas prop `servis` menerima `mekanik_id: string | null`; nonaktifkan tombol (bukan sembunyikan) saat `arah === 'maju' && servis.status === 'Menunggu Antrian' && tujuan === 'Diperiksa' && !servis.mekanik_id`, dengan `title` menjelaskan alasan.
 - [x] 9.5 Verifikasi otomatis: `npm run lint` dan `npm run build` pada file yang diubah. (Keduanya lolos.)
-- [ ] 9.6 Tugas pengguna: jalankan `0004_wajib_mekanik_sebelum_diperiksa.sql` di Supabase SQL Editor, lalu uji manual — servis baru tanpa mekanik tidak bisa diketuk ke Diperiksa (di daftar maupun detail), setelah mekanik ditugaskan tombol aktif dan berhasil maju.
+- [x] 9.6 Tugas pengguna: jalankan `0004_wajib_mekanik_sebelum_diperiksa.sql` di Supabase SQL Editor, lalu uji manual — servis baru tanpa mekanik tidak bisa diketuk ke Diperiksa (di daftar maupun detail), setelah mekanik ditugaskan tombol aktif dan berhasil maju.
