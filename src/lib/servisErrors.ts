@@ -9,6 +9,9 @@ export type KodeServisError =
   | 'DATA_TIDAK_VALID'
   | 'SERVIS_TIDAK_DITEMUKAN'
   | 'STATUS_SUDAH_BERUBAH'
+  | 'MEKANIK_TIDAK_TERSEDIA'
+  | 'PENUGASAN_TERKUNCI'
+  | 'MEKANIK_BELUM_DITUGASKAN'
   | 'MIGRASI_BELUM_DIJALANKAN'
   | 'JARINGAN'
   | 'UMUM'
@@ -68,6 +71,18 @@ export function mapServisError(error: ErrorSupabase): PesanServis {
       return buat('DATA_TIDAK_VALID', (details && PESAN_FIELD[details]) || 'Data yang diisi tidak valid.')
     case 'SERVIS_TIDAK_DITEMUKAN':
       return buat('SERVIS_TIDAK_DITEMUKAN', 'Servis tidak ditemukan.')
+    case 'MEKANIK_TIDAK_TERSEDIA':
+      return buat('MEKANIK_TIDAK_TERSEDIA', 'Mekanik ini sedang tidak aktif atau tidak hadir.')
+    case 'PENUGASAN_TERKUNCI':
+      return buat(
+        'PENUGASAN_TERKUNCI',
+        'Servis ini sudah selesai dikerjakan, penugasan mekanik tidak dapat diubah.',
+      )
+    case 'MEKANIK_BELUM_DITUGASKAN':
+      return buat(
+        'MEKANIK_BELUM_DITUGASKAN',
+        'Tugaskan mekanik terlebih dahulu sebelum memindahkan status ke Diperiksa.',
+      )
   }
 
   // Balapan dengan tablet lain: index "satu servis aktif per kendaraan" terlanggar.

@@ -7,6 +7,10 @@ export type MekanikRingkasan = Pick<Tables<'mekanik'>, 'id' | 'nama' | 'status_h
   bebanKerja: number
 }
 
+export type MekanikTersedia = Pick<Tables<'mekanik'>, 'id' | 'nama'>
+
+export type KendaraanMekanik = Pick<Tables<'layanan_service'>, 'id' | 'nomor_polisi' | 'status'>
+
 function ok<T>(data: T): Hasil<T> {
   return { data, error: null }
 }
@@ -59,4 +63,28 @@ export async function nonaktifkanMekanik(id: string): Promise<Hasil<null>> {
   const { error } = await supabase.from('mekanik').update({ is_active: false }).eq('id', id)
   if (error) return gagal(error)
   return ok(null)
+}
+
+/** Mekanik yang boleh dipilih saat penugasan/reassign: aktif dan sedang hadir (design D5). */
+export async function ambilMekanikTersedia(): Promise<Hasil<MekanikTersedia[]>> {
+  const { data, error } = await supabase
+    .from('mekanik')
+    .select('id, nama')
+    .eq('is_active', true)
+    .eq('status_hadir', true)
+    .order('nama')
+  if (error) return gagal(error)
+  return ok(data)
+}
+
+/** Kendaraan aktif yang sedang ditangani seorang mekanik (FR-5.8). */
+export async function ambilKendaraanMekanik(mekanikId: string): Promise<Hasil<KendaraanMekanik[]>> {
+  const { data, error } = await supabase
+    .from('layanan_service')
+    .select('id, nomor_polisi, status')
+    .eq('mekanik_id', mekanikId)
+    .neq('status', 'Sudah Diambil')
+    .order('tanggal_masuk', { ascending: true })
+  if (error) return gagal(error)
+  return ok(data)
 }

@@ -1,15 +1,19 @@
 ﻿import { Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { StatusBadge } from '../components/StatusBadge';
 import {
 	ambilDaftarMekanik,
+	ambilKendaraanMekanik,
 	nonaktifkanMekanik,
 	tambahMekanik,
 	ubahNamaMekanik,
 	ubahStatusHadir,
+	type KendaraanMekanik,
 	type MekanikRingkasan,
 } from '../lib/mekanik';
 import type { PesanMekanik } from '../lib/mekanikErrors';
+import { formatNopol } from '../lib/nopol';
 import { useMuat } from '../lib/useMuat';
 
 const inputClass =
@@ -29,6 +33,10 @@ export function MekanikPage() {
 	const [galatBaris, setGalatBaris] = useState<Record<string, string>>({});
 	const [processingId, setProcessingId] = useState<string | null>(null);
 	const [konfirmasiId, setKonfirmasiId] = useState<string | null>(null);
+
+	const [expandedId, setExpandedId] = useState<string | null>(null);
+	const [kendaraanPerMekanik, setKendaraanPerMekanik] = useState<Record<string, KendaraanMekanik[]>>({});
+	const [memuatKendaraanId, setMemuatKendaraanId] = useState<string | null>(null);
 
 	function tutupDialogTambah() {
 		setTambahOpen(false);
@@ -92,6 +100,21 @@ export function MekanikPage() {
 			return;
 		}
 		muatUlang();
+	}
+
+	async function toggleLihatKendaraan(m: MekanikRingkasan) {
+		if (expandedId === m.id) {
+			setExpandedId(null);
+			return;
+		}
+		setExpandedId(m.id);
+		if (kendaraanPerMekanik[m.id]) return;
+		setMemuatKendaraanId(m.id);
+		const hasil = await ambilKendaraanMekanik(m.id);
+		setMemuatKendaraanId(null);
+		if (!hasil.error) {
+			setKendaraanPerMekanik((k) => ({ ...k, [m.id]: hasil.data }));
+		}
 	}
 
 	const mekanikDikonfirmasi = data?.find((m) => m.id === konfirmasiId) ?? null;
@@ -202,6 +225,38 @@ export function MekanikPage() {
 										</button>
 									</div>
 								</div>
+
+								<div className="mt-3 border-t border-slate-100 pt-3">
+									<button
+										type="button"
+										onClick={() => void toggleLihatKendaraan(m)}
+										className="text-sm font-medium text-brand-700 hover:underline">
+										{expandedId === m.id ? 'Sembunyikan' : 'Lihat'} kendaraan yang ditangani (
+										{m.bebanKerja})
+									</button>
+									{expandedId === m.id && (
+										<div className="mt-2">
+											{memuatKendaraanId === m.id ? (
+												<p className="text-sm text-slate-500">Memuat…</p>
+											) : (kendaraanPerMekanik[m.id]?.length ?? 0) === 0 ? (
+												<p className="text-sm text-slate-500">
+													Belum menangani kendaraan apa pun.
+												</p>
+											) : (
+												<ul className="space-y-1">
+													{kendaraanPerMekanik[m.id]!.map((k) => (
+														<li
+															key={k.id}
+															className="flex items-center justify-between gap-2 text-sm">
+																<span className="font-medium text-slate-800">{formatNopol(k.nomor_polisi)}</span>
+																<StatusBadge status={k.status} />
+														</li>
+													))}
+												</ul>
+											)}
+										</div>
+									)}
+								</div>
 							</li>
 						);
 					})}
@@ -228,7 +283,7 @@ export function MekanikPage() {
 				type="button"
 				onClick={() => setTambahOpen(true)}
 				aria-label="Tambah mekanik"
-				className="fixed bottom-6 right-6 z-10 flex size-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2">
+				className="fixed right-6 bottom-[calc(1.5rem_+_env(safe-area-inset-bottom,0px))] z-10 flex size-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2">
 				<Plus className="size-7" aria-hidden="true" />
 			</button>
 

@@ -4,7 +4,7 @@ import { mapServisError, pesanStatusSudahBerubah, type Hasil } from './servisErr
 import type { ServisPayload } from './servisValidation'
 import type { StatusServis, Tables } from '../types/database'
 
-export type Servis = Tables<'layanan_service'>
+export type Servis = Tables<'layanan_service'> & { mekanik: Pick<Tables<'mekanik'>, 'nama'> | null }
 
 export type RiwayatStatusItem = {
   id: string
@@ -34,22 +34,29 @@ function gagal<T>(error: Parameters<typeof mapServisError>[0]): Hasil<T> {
 export async function ambilServisAktif(): Promise<Hasil<Servis[]>> {
   const { data, error } = await supabase
     .from('layanan_service')
-    .select('*')
+    .select('*, mekanik(nama)')
     .neq('status', 'Sudah Diambil')
     .order('tanggal_masuk', { ascending: true })
   if (error) return gagal(error)
-  return ok(data)
+  return ok(data as Servis[])
 }
 
 /** `data` bernilai `null` bila servis tidak ada. */
 export async function ambilServis(id: string): Promise<Hasil<ServisDetail | null>> {
   const { data, error } = await supabase
     .from('layanan_service')
-    .select('*, riwayat_status(id, status_baru, waktu, service_advisors(nama))')
+    .select('*, mekanik(nama), riwayat_status(id, status_baru, waktu, service_advisors(nama))')
     .eq('id', id)
     .maybeSingle()
   if (error) return gagal(error)
   return ok(data as ServisDetail | null)
+}
+
+/** Menugaskan atau mengganti (reassign) mekanik yang menangani sebuah servis (FR-5.6/5.7). */
+export async function tugaskanMekanik(id: string, mekanikId: string): Promise<Hasil<null>> {
+  const { error } = await supabase.from('layanan_service').update({ mekanik_id: mekanikId }).eq('id', id)
+  if (error) return gagal(error)
+  return ok(null)
 }
 
 export async function cariKendaraan(nopol: string): Promise<Hasil<HasilCariKendaraan>> {

@@ -78,7 +78,7 @@ export function DashboardPage() {
                   <tbody className="divide-y divide-slate-100">
                     {data.servisAktif.map((s) => (
                       <tr key={s.id}>
-                        <td className="px-4 py-3 text-slate-700">{s.mekanik_id ?? '-'}</td>
+                        <td className="px-4 py-3 text-slate-700">{s.mekanik?.nama ?? '-'}</td>
                         <td className="px-4 py-3 text-slate-700">{s.jenis_motor}</td>
                         <td className="px-4 py-3 text-slate-700">{s.masalah}</td>
                         <td className="px-4 py-3">

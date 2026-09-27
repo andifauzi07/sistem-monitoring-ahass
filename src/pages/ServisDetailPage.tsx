@@ -5,8 +5,9 @@ import { StatusActionButton } from '../components/StatusActionButton'
 import { StatusBadge } from '../components/StatusBadge'
 import { UndoToast } from '../components/UndoToast'
 import { formatKilometer, formatTanggalWaktu } from '../lib/format'
+import { ambilMekanikTersedia } from '../lib/mekanik'
 import { formatNopol } from '../lib/nopol'
-import { ambilServis, hapusServis } from '../lib/servis'
+import { ambilServis, hapusServis, tugaskanMekanik } from '../lib/servis'
 import type { PesanServis } from '../lib/servisErrors'
 import { isAktif, statusSebelumnya } from '../lib/statusServis'
 import { useMuat } from '../lib/useMuat'
@@ -31,6 +32,40 @@ export function ServisDetailPage() {
   const [konfirmasiHapus, setKonfirmasiHapus] = useState(false)
   const [menghapus, setMenghapus] = useState(false)
   const [galatHapus, setGalatHapus] = useState<PesanServis | null>(null)
+
+  const mekanikLoader = useCallback(() => ambilMekanikTersedia(), [])
+  const { data: mekanikTersedia } = useMuat(mekanikLoader)
+  const [mekanikIdDimuat, setMekanikIdDimuat] = useState<string | null>(null)
+  const [pilihMekanikId, setPilihMekanikId] = useState('')
+  const [menugaskan, setMenugaskan] = useState(false)
+  const [konfirmasiReassign, setKonfirmasiReassign] = useState(false)
+
+  // Sinkronkan pilihan dropdown saat servis (baru) dimuat, tanpa efek terpisah (design D7).
+  if (servis && servis.mekanik_id !== mekanikIdDimuat) {
+    setMekanikIdDimuat(servis.mekanik_id)
+    setPilihMekanikId(servis.mekanik_id ?? '')
+  }
+
+  async function simpanMekanik(mekanikId: string) {
+    if (menugaskan) return
+    setMenugaskan(true)
+    const hasil = await tugaskanMekanik(id, mekanikId)
+    setMenugaskan(false)
+    setKonfirmasiReassign(false)
+    if (hasil.error) {
+      setGalatHapus(null)
+      setGalat(hasil.error)
+      return
+    }
+    setGalat(null)
+    muatUlang()
+  }
+
+  function handleSimpanMekanikClick() {
+    if (!servis || !pilihMekanikId || pilihMekanikId === (servis.mekanik_id ?? '')) return
+    if (servis.mekanik_id) setKonfirmasiReassign(true)
+    else void simpanMekanik(pilihMekanikId)
+  }
 
   useEffect(() => {
     function onVisible() {
@@ -121,6 +156,37 @@ export function ServisDetailPage() {
 
       <section className="rounded-xl border border-slate-200 bg-white px-5 shadow-sm">
         <dl className="divide-y divide-slate-100">
+          <Baris label="Mekanik">
+            {aktif && servis.status !== 'Selesai Dikerjakan' ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={pilihMekanikId}
+                  onChange={(e) => setPilihMekanikId(e.target.value)}
+                  disabled={menugaskan || !mekanikTersedia}
+                  className="min-h-11 rounded-md border border-slate-300 bg-white px-3 py-2 text-base shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 disabled:bg-slate-100"
+                >
+                  <option value="" disabled>
+                    Pilih mekanik
+                  </option>
+                  {(mekanikTersedia ?? []).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nama}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleSimpanMekanikClick}
+                  disabled={menugaskan || !pilihMekanikId || pilihMekanikId === (servis.mekanik_id ?? '')}
+                  className="min-h-11 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                >
+                  {menugaskan ? 'Menyimpan…' : 'Simpan'}
+                </button>
+              </div>
+            ) : (
+              servis.mekanik?.nama ?? 'Belum ditugaskan'
+            )}
+          </Baris>
           <Baris label="Jenis motor">{servis.jenis_motor}</Baris>
           <Baris label="Kilometer">{formatKilometer(servis.kilometer)}</Baris>
           <Baris label="Nama pembawa">{servis.nama_pembawa}</Baris>
@@ -198,6 +264,22 @@ export function ServisDetailPage() {
       >
         Servis untuk <span className="font-semibold">{formatNopol(servis.nomor_polisi)}</span> akan dihapus
         permanen beserta riwayatnya.
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={konfirmasiReassign}
+        judul="Ganti penugasan mekanik?"
+        labelKonfirmasi="Ya, ganti"
+        memproses={menugaskan}
+        onKonfirmasi={() => void simpanMekanik(pilihMekanikId)}
+        onBatal={() => setKonfirmasiReassign(false)}
+      >
+        Kendaraan <span className="font-semibold">{formatNopol(servis.nomor_polisi)}</span> akan dipindahkan
+        dari <span className="font-semibold">{servis.mekanik?.nama}</span> ke{' '}
+        <span className="font-semibold">
+          {mekanikTersedia?.find((m) => m.id === pilihMekanikId)?.nama}
+        </span>
+        .
       </ConfirmDialog>
 
       <UndoToast toast={toast} onTutup={tutupToast} />

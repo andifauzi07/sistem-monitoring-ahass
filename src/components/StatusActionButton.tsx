@@ -7,7 +7,7 @@ import type { StatusServis } from '../types/database'
 import { ConfirmDialog } from './ConfirmDialog'
 
 type Props = {
-  servis: { id: string; nomor_polisi: string; status: StatusServis }
+  servis: { id: string; nomor_polisi: string; status: StatusServis; mekanik_id?: string | null }
   /** `maju` = "→ status berikutnya"; `mundur` = "Kembalikan ke status sebelumnya" (selalu dikonfirmasi). */
   arah?: 'maju' | 'mundur'
   className?: string
@@ -24,6 +24,8 @@ export function StatusActionButton({ servis, arah = 'maju', className = '', onBe
 
   const perlu = arah === 'mundur' || perluKonfirmasi(tujuan)
   const final = arah === 'maju' && tujuan === 'Sudah Diambil'
+  const butuhMekanik =
+    arah === 'maju' && servis.status === 'Menunggu Antrian' && tujuan === 'Diperiksa' && !servis.mekanik_id
 
   async function jalankan(ke: StatusServis) {
     if (memproses) return
@@ -45,7 +47,8 @@ export function StatusActionButton({ servis, arah = 'maju', className = '', onBe
     <>
       <button
         type="button"
-        disabled={memproses}
+        disabled={memproses || butuhMekanik}
+        title={butuhMekanik ? 'Tugaskan mekanik terlebih dahulu sebelum memindahkan status ke Diperiksa' : undefined}
         onClick={() => (perlu ? setKonfirmasi(true) : void jalankan(tujuan))}
         className={`min-h-11 rounded-md px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${gaya} ${className}`}
       >

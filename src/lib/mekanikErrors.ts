@@ -1,6 +1,6 @@
 // Memetakan error database/jaringan menjadi pesan Bahasa Indonesia (pola sama dengan servisErrors.ts).
 
-export type KodeMekanikError = 'DATA_TIDAK_VALID' | 'JARINGAN' | 'UMUM'
+export type KodeMekanikError = 'DATA_TIDAK_VALID' | 'MEKANIK_MASIH_BERTUGAS' | 'JARINGAN' | 'UMUM'
 
 export type PesanMekanik = {
   kode: KodeMekanikError
@@ -26,6 +26,13 @@ export function mapMekanikError(error: ErrorSupabase): PesanMekanik {
 
   // Pelanggaran check constraint mekanik.nama (lihat 0001_init_schema.sql).
   if (error.code === '23514') return pesanNamaKosong()
+
+  if (message === 'MEKANIK_MASIH_BERTUGAS') {
+    return {
+      kode: 'MEKANIK_MASIH_BERTUGAS',
+      pesan: 'Mekanik ini masih menangani kendaraan aktif. Pindahkan penugasannya dulu.',
+    }
+  }
 
   if (/failed to fetch|networkerror|load failed|network request failed/i.test(message)) {
     return { kode: 'JARINGAN', pesan: MSG_JARINGAN }
