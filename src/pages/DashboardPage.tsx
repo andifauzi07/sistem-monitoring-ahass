@@ -1,9 +1,18 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { StatusBadge } from '../components/StatusBadge'
 import { ambilRingkasanMekanik, type RingkasanMekanik } from '../lib/dashboard'
 import { ambilServisAktif, type Servis } from '../lib/servis'
 import type { Hasil } from '../lib/servisErrors'
 import { useMuat } from '../lib/useMuat'
+import { useSinyalRealtime } from '../lib/useSinyalRealtime'
+
+// Mekanik ikut didengarkan untuk kartu "Mekanik yang Hadir".
+function pasangDashboard(channel: RealtimeChannel, picu: () => void) {
+  channel
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'layanan_service' }, picu)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'mekanik' }, picu)
+}
 
 type DataDashboard = { servisAktif: Servis[]; mekanik: RingkasanMekanik }
 
@@ -17,15 +26,7 @@ async function muatDashboard(): Promise<Hasil<DataDashboard>> {
 export function DashboardPage() {
   const loader = useCallback(() => muatDashboard(), [])
   const { data, error, loading, muatUlang } = useMuat(loader)
-
-  // Tablet SA sering berpindah aplikasi: ambil data terbaru setiap tab kembali aktif.
-  useEffect(() => {
-    function onVisible() {
-      if (document.visibilityState === 'visible') muatUlang()
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [muatUlang])
+  useSinyalRealtime({ nama: 'sa-dashboard', pasang: pasangDashboard }, muatUlang)
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { StatusActionButton } from '../components/StatusActionButton'
 import { StatusBadge } from '../components/StatusBadge'
 import { UndoToast } from '../components/UndoToast'
@@ -7,6 +8,7 @@ import { formatTanggalWaktu } from '../lib/format'
 import { formatNopol, normalizeNopol } from '../lib/nopol'
 import { ambilServisAktif } from '../lib/servis'
 import { useMuat } from '../lib/useMuat'
+import { useSinyalRealtime } from '../lib/useSinyalRealtime'
 import { useStatusFeedback } from '../lib/useStatusFeedback'
 import { STATUS_SERVIS, type StatusServis } from '../types/database'
 
@@ -14,22 +16,20 @@ type Filter = StatusServis | 'semua'
 
 const STATUS_AKTIF = STATUS_SERVIS.filter((s) => s !== 'Sudah Diambil')
 
+function pasangDaftarServis(channel: RealtimeChannel, picu: () => void) {
+  channel.on('postgres_changes', { event: '*', schema: 'public', table: 'layanan_service' }, picu)
+}
+
 export function ServisListPage() {
   const loader = useCallback(() => ambilServisAktif(), [])
   const { data, error, loading, muatUlang } = useMuat(loader)
   const { toast, tutupToast, galat, handleBerhasil, handleGagal } = useStatusFeedback(muatUlang)
 
+  useSinyalRealtime({ nama: 'sa-servis-list', pasang: pasangDaftarServis }, muatUlang)
+
+  // Pencarian & filter adalah state lokal terpisah dari data, jadi tetap saat data dimuat ulang.
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('semua')
-
-  // Tablet SA sering berpindah aplikasi: ambil data terbaru setiap tab kembali aktif.
-  useEffect(() => {
-    function onVisible() {
-      if (document.visibilityState === 'visible') muatUlang()
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [muatUlang])
 
   const tampil = useMemo(() => {
     const q = normalizeNopol(query)

@@ -1,12 +1,16 @@
-import { useCallback, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { CircleCheck, LoaderCircle, SearchX } from 'lucide-react'
+import { IndikatorLive } from '../components/IndikatorLive'
 import { StatusBadge } from '../components/StatusBadge'
 import { StatusStepper } from '../components/StatusStepper'
 import { cekStatus, PANJANG_MIN_NOPOL, pisahkanHasil, type Hasil } from '../lib/cekStatus'
 import { formatTanggalWaktu } from '../lib/format'
 import { formatNopol, normalizeNopol } from '../lib/nopol'
+import { isAktif } from '../lib/statusServis'
 import { useMuat } from '../lib/useMuat'
+import { useSinyalRealtime } from '../lib/useSinyalRealtime'
 import type { HasilCekStatus } from '../types/database'
 
 const PESAN_TERLALU_PENDEK = `Masukkan nomor polisi minimal ${PANJANG_MIN_NOPOL} huruf/angka.`
@@ -27,7 +31,31 @@ function pesanValidasiDariUrl(mentah: string | null): string | null {
   return mentah !== null && !nopolValid(mentah) ? PESAN_TERLALU_PENDEK : null
 }
 
-const TANPA_PENCARIAN: Hasil<HasilCekStatus[] | null> = { data: null, error: null }
+/** Hasil `cek_status` beserta waktu berhasil dimuat (dicatat di loader, bukan saat render). */
+type Muatan = { daftar: HasilCekStatus[]; waktu: Date }
+
+const TANPA_PENCARIAN: Hasil<Muatan | null> = { data: null, error: null }
+
+const LAMA_SOROT_MS = 2500
+
+// Payload broadcast sengaja diabaikan: data selalu diambil ulang lewat cek_status (design D1).
+function pasangPublik(channel: RealtimeChannel, picu: () => void) {
+  channel.on('broadcast', { event: 'berubah' }, () => picu())
+}
+
+/**
+ * Teks pengumuman bila status kunjungan terbaru berubah, selain itu null.
+ * Kunjungan terbaru = servis aktif bila ada (selalu yang paling baru masuk).
+ * Kunjungan yang hilang (servis dihapus) tidak diumumkan.
+ */
+function teksPerubahan(sebelum: HasilCekStatus[], sesudah: HasilCekStatus[]): string | null {
+  const lama = sebelum[0]
+  const baru = sesudah[0]
+  if (!baru) return null
+  const kunjunganSama = lama?.tanggal_masuk === baru.tanggal_masuk
+  if (kunjunganSama ? lama.status === baru.status : !isAktif(baru.status)) return null
+  return `Status berubah menjadi ${baru.status}`
+}
 
 export function PublicMonitoringPage() {
   // URL adalah sumber kebenaran pencarian (design D2).
@@ -46,13 +74,43 @@ export function PublicMonitoringPage() {
     setPesanValidasi(pesanValidasiDariUrl(paramNopol))
   }
 
-  const loader = useCallback(
-    (): Promise<Hasil<HasilCekStatus[] | null>> =>
-      nopol ? cekStatus(nopol) : Promise.resolve(TANPA_PENCARIAN),
-    [nopol],
-  )
+  const loader = useCallback(async (): Promise<Hasil<Muatan | null>> => {
+    if (!nopol) return TANPA_PENCARIAN
+    const hasil = await cekStatus(nopol)
+    return hasil.error ? hasil : { data: { daftar: hasil.data, waktu: new Date() }, error: null }
+  }, [nopol])
   const { data, error, loading, muatUlang } = useMuat(loader)
+  // `loading` hanya true saat nopol berganti; muat ulang karena sinyal mempertahankan data lama,
+  // sehingga tombol "Cek Status" tidak ikut berputar (design D6).
   const memuat = nopol !== null && loading
+
+  const { terhubung } = useSinyalRealtime(
+    { nama: `servis:${nopol ?? ''}`, pasang: pasangPublik, aktif: nopol !== null },
+    muatUlang,
+  )
+
+  // Muatan terakhir yang berhasil: tetap ditampilkan bila penyegaran berikutnya gagal,
+  // dan menjadi pembanding untuk pengumuman perubahan status.
+  const [terakhir, setTerakhir] = useState<{ nopol: string; muatan: Muatan } | null>(null)
+  const [pengumuman, setPengumuman] = useState<{ nopol: string; teks: string } | null>(null)
+  const [sorot, setSorot] = useState(false)
+  if (nopol && data && data !== terakhir?.muatan) {
+    const sebelum = terakhir?.nopol === nopol ? terakhir.muatan.daftar : null
+    setTerakhir({ nopol, muatan: data })
+    const teks = sebelum ? teksPerubahan(sebelum, data.daftar) : null
+    if (teks) {
+      setPengumuman({ nopol, teks })
+      setSorot(true)
+    }
+  }
+
+  useEffect(() => {
+    if (!sorot) return
+    const timer = setTimeout(() => setSorot(false), LAMA_SOROT_MS)
+    return () => clearTimeout(timer)
+  }, [sorot, pengumuman])
+
+  const muatanTampil = data ?? (error && terakhir?.nopol === nopol ? terakhir.muatan : null)
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -125,6 +183,23 @@ export function PublicMonitoringPage() {
           <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
           Mencari data servis…
         </div>
+      ) : muatanTampil ? (
+        <div className="space-y-4">
+          {error && (
+            <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">
+              <p>Gagal memperbarui data. Menampilkan data terakhir.</p>
+              <button type="button" onClick={muatUlang} className="min-h-11 font-semibold underline">
+                Coba lagi
+              </button>
+            </div>
+          )}
+          {muatanTampil.daftar.length === 0 ? (
+            <TidakDitemukan nopol={nopol} />
+          ) : (
+            <HasilPencarian key={nopol} nopol={nopol} hasil={muatanTampil.daftar} sorot={sorot} />
+          )}
+          <IndikatorLive terhubung={terhubung} diperbarui={muatanTampil.waktu} />
+        </div>
       ) : error ? (
         <div role="alert" className="space-y-3 rounded-xl bg-red-50 p-5 text-sm text-red-700">
           <p>{error.pesan}</p>
@@ -136,11 +211,12 @@ export function PublicMonitoringPage() {
             Coba lagi
           </button>
         </div>
-      ) : data && data.length === 0 ? (
-        <TidakDitemukan nopol={nopol} />
-      ) : data ? (
-        <HasilPencarian key={nopol} nopol={nopol} hasil={data} />
       ) : null}
+
+      {/* Selalu ada di DOM agar pembaca layar mengumumkan perubahannya. */}
+      <p aria-live="polite" className="sr-only">
+        {pengumuman && pengumuman.nopol === nopol ? pengumuman.teks : ''}
+      </p>
     </div>
   )
 }
@@ -159,13 +235,13 @@ function TidakDitemukan({ nopol }: { nopol: string }) {
   )
 }
 
-function HasilPencarian({ nopol, hasil }: { nopol: string; hasil: HasilCekStatus[] }) {
+function HasilPencarian({ nopol, hasil, sorot }: { nopol: string; hasil: HasilCekStatus[]; sorot: boolean }) {
   const { aktif, riwayat } = pisahkanHasil(hasil)
 
   return (
     <div className="space-y-4">
       {aktif ? (
-        <KartuServisAktif servis={aktif} />
+        <KartuServisAktif servis={aktif} sorot={sorot} />
       ) : (
         <div className="rounded-xl border border-slate-200 bg-white p-5 text-center">
           <p className="font-semibold text-slate-800">{formatNopol(nopol)}</p>
@@ -211,21 +287,19 @@ function HasilPencarian({ nopol, hasil }: { nopol: string; hasil: HasilCekStatus
           </div>
         </details>
       )}
-
-      <p className="text-center text-xs text-slate-500">
-        Tekan “Cek Status” lagi untuk melihat perkembangan terbaru.
-      </p>
     </div>
   )
 }
 
-function KartuServisAktif({ servis }: { servis: HasilCekStatus }) {
+function KartuServisAktif({ servis, sorot }: { servis: HasilCekStatus; sorot: boolean }) {
   const siapDiambil = servis.status === 'Selesai Dikerjakan'
 
   return (
     <section
       aria-label="Servis yang sedang berjalan"
-      className="space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      className={`space-y-5 rounded-xl border p-5 shadow-sm transition-colors duration-700 ${
+        sorot ? 'border-amber-300 bg-amber-50 ring-2 ring-amber-200' : 'border-slate-200 bg-white'
+      }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

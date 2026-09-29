@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { StatusActionButton } from '../components/StatusActionButton'
 import { StatusBadge } from '../components/StatusBadge'
@@ -11,6 +12,7 @@ import { ambilServis, hapusServis, tugaskanMekanik } from '../lib/servis'
 import type { PesanServis } from '../lib/servisErrors'
 import { isAktif, statusSebelumnya } from '../lib/statusServis'
 import { useMuat } from '../lib/useMuat'
+import { useSinyalRealtime } from '../lib/useSinyalRealtime'
 import { useStatusFeedback } from '../lib/useStatusFeedback'
 
 function Baris({ label, children }: { label: string; children: ReactNode }) {
@@ -67,13 +69,22 @@ export function ServisDetailPage() {
     else void simpanMekanik(pilihMekanikId)
   }
 
-  useEffect(() => {
-    function onVisible() {
-      if (document.visibilityState === 'visible') muatUlang()
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [muatUlang])
+  // Supabase tidak mendukung filter pada DELETE → cocokkan id di klien (design D3).
+  const pasangDetail = useCallback(
+    (channel: RealtimeChannel, picu: () => void) => {
+      channel
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'layanan_service', filter: `id=eq.${id}` },
+          picu,
+        )
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'layanan_service' }, (payload) => {
+          if (payload.old.id === id) picu()
+        })
+    },
+    [id],
+  )
+  useSinyalRealtime({ nama: `sa-servis-${id}`, pasang: pasangDetail }, muatUlang)
 
   async function hapus() {
     if (menghapus) return

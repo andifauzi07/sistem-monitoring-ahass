@@ -53,6 +53,36 @@ select * from public.bersihkan_input_servis('dc 1234-ab', ' Budi ', '0812 3456-7
 ```
 
 Aturan status (transisi ±1 langkah, `tanggal_selesai`, kunci `Sudah Diambil`, hapus terbatas) paling mudah diuji lewat aplikasi mengikuti daftar uji manual pada `tasks.md` change `iterasi-2-kelola-service`.
+
+## Migrasi Iterasi 6 (Realtime)
+
+Jalankan **setelah** `0001`–`0004`, dengan cara yang sama di SQL Editor: salin isi `migrations/0005_realtime.sql`, tempel, lalu **Run**. Migrasi ini:
+
+- menambahkan `layanan_service` dan `mekanik` ke publication `supabase_realtime` (event `postgres_changes` untuk SA, tetap tunduk RLS sehingga `anon` tidak menerima apa pun);
+- memasang trigger `trg_siarkan_perubahan_servis` yang mengirim sinyal Broadcast kosong (`{}`) berevent `berubah` ke channel publik `servis:<NOPOL>` saat servis ditambah/dihapus atau kolom publiknya berubah. Halaman pelanggan lalu mengambil ulang data lewat `cek_status`.
+
+**Syarat konfigurasi:** di **Supabase Dashboard → Realtime → Settings**, akses channel publik harus diizinkan (opsi *Allow public access* aktif / *private-only* tidak dicentang). Bila dimatikan, halaman pelanggan menampilkan "Menghubungkan ulang…" dan hanya diperbarui saat tab kembali aktif atau tombol "Cek Status" ditekan.
+
+Query verifikasi:
+
+```sql
+-- 1. Kedua tabel ada di publication (harus 2 baris, masing-masing sekali)
+select tablename from pg_publication_tables
+where pubname = 'supabase_realtime' and schemaname = 'public'
+  and tablename in ('layanan_service', 'mekanik');
+
+-- 2. Trigger terpasang (harus 1 baris)
+select tgname from pg_trigger
+where tgrelid = 'public.layanan_service'::regclass and tgname = 'trg_siarkan_perubahan_servis';
+```
+
+Rollback:
+
+```sql
+drop trigger if exists trg_siarkan_perubahan_servis on public.layanan_service;
+drop function if exists public.siarkan_perubahan_servis();
+alter publication supabase_realtime drop table public.layanan_service, public.mekanik;
+```
 ## Membuat akun Service Advisor
 
 Aplikasi tidak memiliki halaman registrasi. Buat akun lewat **Authentication → Users → Add user → Create new user** (centang *Auto Confirm User*).
@@ -125,4 +155,6 @@ curl "$VITE_SUPABASE_URL/rest/v1/layanan_service?select=*" \
 | `trg_cegah_hapus_layanan` | Trigger: hapus layanan hanya saat `Menunggu Antrian` |
 | `daftar_servis(...)` / `ubah_servis(...)` / `hapus_servis(id)` | RPC untuk `authenticated` (Iterasi 2). Atomik: pelanggan dan layanan diubah dalam satu transaksi |
 | `cek_status(nopol)` | RPC publik (anon). Hanya mengembalikan nopol, jenis motor, status, dan tanggal |
+| `trg_siarkan_perubahan_servis` | Trigger (Iterasi 6): sinyal Broadcast kosong ke channel publik `servis:<NOPOL>` |
+| Publication `supabase_realtime` | Berisi `layanan_service` dan `mekanik` (Iterasi 6) |
 | RLS | `authenticated` = akses penuh; `anon` = tanpa akses tabel |
