@@ -1,7 +1,7 @@
 # project-foundation Specification
 
 ## Purpose
-Fondasi aplikasi frontend: styling Tailwind, routing SPA, Supabase client dari environment, indikator koneksi database, serta build dan deployment Vercel.
+Fondasi aplikasi frontend: styling Tailwind, routing SPA, Supabase client dari environment, serta build dan deployment Vercel.
 ## Requirements
 ### Requirement: Styling berbasis Tailwind CSS
 
@@ -20,9 +20,9 @@ Aplikasi SHALL menggunakan Tailwind CSS v4 sebagai satu-satunya basis styling, d
 ### Requirement: Routing SPA dengan rute placeholder
 
 Aplikasi SHALL menyediakan routing sisi klien dengan rute berikut:
-- `/`: monitoring publik, placeholder;
+- `/`: monitoring publik pelanggan, lihat capability `public-monitoring`; menerima query param opsional `nopol`;
 - `/login`: form login Service Advisor, lihat capability `sa-authentication`;
-- `/dashboard`: rute terproteksi, kontennya masih placeholder.
+- `/dashboard`: rute terproteksi, lihat capability `sa-dashboard`.
 
 Rute yang tidak dikenal SHALL menampilkan halaman "tidak ditemukan".
 
@@ -34,7 +34,7 @@ Rute yang tidak dikenal SHALL menampilkan halaman "tidak ditemukan".
 #### Scenario: Rute terproteksi
 
 - **WHEN** pengguna yang belum login membuka `/dashboard`
-- **THEN** router mengarahkan ke `/login`, bukan menampilkan placeholder dashboard
+- **THEN** router mengarahkan ke `/login`, bukan menampilkan dashboard
 
 #### Scenario: Rute tidak dikenal
 
@@ -54,20 +54,6 @@ Aplikasi SHALL membuat satu instance Supabase client yang dibaca dari `VITE_SUPA
 
 - **WHEN** salah satu variabel env kosong
 - **THEN** aplikasi menampilkan pesan konfigurasi yang jelas, bukan layar kosong atau error tak tertangani
-
-### Requirement: Pengecekan koneksi Supabase
-
-Aplikasi SHALL menampilkan indikator status koneksi ke Supabase berdasarkan test query sungguhan terhadap database.
-
-#### Scenario: Koneksi berhasil
-
-- **WHEN** halaman placeholder dimuat dan Supabase dapat dijangkau dengan skema terpasang
-- **THEN** indikator menampilkan status "Terhubung"
-
-#### Scenario: Koneksi gagal
-
-- **WHEN** Supabase tidak dapat dijangkau atau query gagal
-- **THEN** indikator menampilkan status gagal beserta pesan error
 
 ### Requirement: Build dan deployment Vercel
 
