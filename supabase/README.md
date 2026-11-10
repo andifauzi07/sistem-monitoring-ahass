@@ -151,10 +151,31 @@ curl "$VITE_SUPABASE_URL/rest/v1/layanan_service?select=*" \
 | `layanan_service` | Satu baris per kunjungan servis. Maksimal satu servis aktif (≠ `Sudah Diambil`) per kendaraan |
 | `riwayat_status` | Diisi otomatis oleh trigger saat insert dan saat status berubah |
 | `riwayat_penugasan_mekanik` | Log penugasan mekanik (diisi mulai Iterasi 4b) |
+| `riwayat_notifikasi` | Log riwayat pengiriman notifikasi WhatsApp pelanggan (Iterasi 7) |
 | `trg_aturan_layanan` | Trigger: servis baru selalu `Menunggu Antrian`; status hanya ±1 langkah; `tanggal_selesai` otomatis saat `Selesai Dikerjakan`; `Sudah Diambil` terkunci |
 | `trg_cegah_hapus_layanan` | Trigger: hapus layanan hanya saat `Menunggu Antrian` |
 | `daftar_servis(...)` / `ubah_servis(...)` / `hapus_servis(id)` | RPC untuk `authenticated` (Iterasi 2). Atomik: pelanggan dan layanan diubah dalam satu transaksi |
 | `cek_status(nopol)` | RPC publik (anon). Hanya mengembalikan nopol, jenis motor, status, dan tanggal |
 | `trg_siarkan_perubahan_servis` | Trigger (Iterasi 6): sinyal Broadcast kosong ke channel publik `servis:<NOPOL>` |
-| Publication `supabase_realtime` | Berisi `layanan_service` dan `mekanik` (Iterasi 6) |
+| `kirim-wa` | Supabase Edge Function (Iterasi 7): pemicu notifikasi WhatsApp via gateway WapiSender |
+| Publication `supabase_realtime` | Berisi `layanan_service`, `mekanik`, dan `riwayat_notifikasi` |
 | RLS | `authenticated` = akses penuh; `anon` = tanpa akses tabel |
+
+## Edge Function: kirim-wa (Iterasi 7)
+
+Pengiriman notifikasi WhatsApp ke pelanggan saat servis `Selesai Dikerjakan` dijalankan via Supabase Edge Function `kirim-wa`.
+
+### Menyiapkan Secrets:
+Atur secrets pada environment Edge Function:
+```bash
+supabase secrets set WAPISENDER_API_KEY="isi_api_key_wapisender" \
+                     WAPISENDER_DEVICE_KEY="isi_device_key_wapisender" \
+                     APP_PUBLIC_URL="https://monitoring-ahass-mamuju.vercel.app"
+```
+Atau melalui dashboard Supabase: **Project Settings → Edge Functions → Secrets**.
+
+### Deploy Edge Function:
+```bash
+supabase functions deploy kirim-wa
+```
+

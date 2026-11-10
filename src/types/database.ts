@@ -11,6 +11,9 @@ export const STATUS_SERVIS = [
 
 export type StatusServis = (typeof STATUS_SERVIS)[number]
 
+export const STATUS_NOTIFIKASI = ['berhasil', 'gagal'] as const
+export type StatusNotifikasi = (typeof STATUS_NOTIFIKASI)[number]
+
 type Timestamp = string
 
 export type Database = {
@@ -242,6 +245,47 @@ export type Database = {
             columns: ['ditugaskan_oleh']
             isOneToOne: false
             referencedRelation: 'service_advisors'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      riwayat_notifikasi: {
+        Row: {
+          id: string
+          layanan_service_id: string
+          nomor_tujuan: string
+          pesan: string
+          status: StatusNotifikasi
+          respons_gateway: string | null
+          id_pesan_gateway: string | null
+          dibuat_pada: Timestamp
+        }
+        Insert: {
+          id?: string
+          layanan_service_id: string
+          nomor_tujuan: string
+          pesan: string
+          status: StatusNotifikasi
+          respons_gateway?: string | null
+          id_pesan_gateway?: string | null
+          dibuat_pada?: Timestamp
+        }
+        Update: {
+          id?: string
+          layanan_service_id?: string
+          nomor_tujuan?: string
+          pesan?: string
+          status?: StatusNotifikasi
+          respons_gateway?: string | null
+          id_pesan_gateway?: string | null
+          dibuat_pada?: Timestamp
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'riwayat_notifikasi_layanan_service_id_fkey'
+            columns: ['layanan_service_id']
+            isOneToOne: false
+            referencedRelation: 'layanan_service'
             referencedColumns: ['id']
           },
         ]

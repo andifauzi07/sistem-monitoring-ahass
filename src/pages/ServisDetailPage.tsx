@@ -1,12 +1,14 @@
 import { useCallback, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import { LoaderCircle } from 'lucide-react'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { StatusActionButton } from '../components/StatusActionButton'
 import { StatusBadge } from '../components/StatusBadge'
 import { UndoToast } from '../components/UndoToast'
 import { formatKilometer, formatTanggalWaktu } from '../lib/format'
 import { ambilMekanikTersedia } from '../lib/mekanik'
+import { ambilRiwayatNotifikasi, kirimNotifikasiWa } from '../lib/notifikasi'
 import { formatNopol } from '../lib/nopol'
 import { ambilServis, hapusServis, tugaskanMekanik } from '../lib/servis'
 import type { PesanServis } from '../lib/servisErrors'
@@ -28,8 +30,21 @@ export function ServisDetailPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const loader = useCallback(() => ambilServis(id), [id])
-  const { data: servis, error, loading, muatUlang } = useMuat(loader)
-  const { toast, tutupToast, galat, setGalat, handleBerhasil, handleGagal } = useStatusFeedback(muatUlang)
+  const { data: servis, error, loading, muatUlang: muatUlangServis } = useMuat(loader)
+
+  const notifLoader = useCallback(() => ambilRiwayatNotifikasi(id), [id])
+  const { data: riwayatNotif, muatUlang: muatUlangNotif } = useMuat(notifLoader)
+
+  const muatSemua = useCallback(() => {
+    muatUlangServis()
+    muatUlangNotif()
+  }, [muatUlangServis, muatUlangNotif])
+
+  const { toast, tutupToast, galat, setGalat, handleBerhasil, handleGagal } = useStatusFeedback(muatSemua)
+
+  const [mengirimWa, setMengirimWa] = useState(false)
+  const [galatWa, setGalatWa] = useState<string | null>(null)
+  const [pesanSuksesWa, setPesanSuksesWa] = useState<string | null>(null)
 
   const [konfirmasiHapus, setKonfirmasiHapus] = useState(false)
   const [menghapus, setMenghapus] = useState(false)
@@ -60,13 +75,30 @@ export function ServisDetailPage() {
       return
     }
     setGalat(null)
-    muatUlang()
+    muatSemua()
   }
 
   function handleSimpanMekanikClick() {
     if (!servis || !pilihMekanikId || pilihMekanikId === (servis.mekanik_id ?? '')) return
     if (servis.mekanik_id) setKonfirmasiReassign(true)
     else void simpanMekanik(pilihMekanikId)
+  }
+
+  async function handleKirimUlangWa() {
+    if (mengirimWa || !servis) return
+    setMengirimWa(true)
+    setGalatWa(null)
+    setPesanSuksesWa(null)
+    const hasil = await kirimNotifikasiWa(servis.id)
+    setMengirimWa(false)
+    if (hasil.error) {
+      setGalatWa(hasil.error.pesan)
+    } else if (hasil.data.status === 'gagal') {
+      setGalatWa(hasil.data.error || 'Pengiriman notifikasi WhatsApp gagal.')
+    } else {
+      setPesanSuksesWa('Notifikasi WhatsApp berhasil dikirim ke pelanggan.')
+    }
+    muatSemua()
   }
 
   // Supabase tidak mendukung filter pada DELETE → cocokkan id di klien (design D3).
@@ -81,10 +113,15 @@ export function ServisDetailPage() {
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'layanan_service' }, (payload) => {
           if (payload.old.id === id) picu()
         })
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'riwayat_notifikasi', filter: `layanan_service_id=eq.${id}` },
+          picu,
+        )
     },
     [id],
   )
-  useSinyalRealtime({ nama: `sa-servis-${id}`, pasang: pasangDetail }, muatUlang)
+  useSinyalRealtime({ nama: `sa-servis-${id}`, pasang: pasangDetail }, muatSemua)
 
   async function hapus() {
     if (menghapus) return
@@ -94,7 +131,7 @@ export function ServisDetailPage() {
     setKonfirmasiHapus(false)
     if (hasil.error) {
       setGalatHapus(hasil.error)
-      muatUlang()
+      muatSemua()
       return
     }
     navigate('/servis', { replace: true })
@@ -243,6 +280,104 @@ export function ServisDetailPage() {
             </button>
           )}
         </div>
+      )}
+
+      {(servis.status === 'Selesai Dikerjakan' ||
+        servis.status === 'Sudah Diambil' ||
+        (riwayatNotif && riwayatNotif.length > 0)) && (
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Notifikasi WhatsApp</h2>
+              <p className="text-xs text-slate-500">
+                Pemberitahuan resmi pengerjaan motor telah selesai ke WhatsApp pembawa.
+              </p>
+            </div>
+            {(servis.status === 'Selesai Dikerjakan' || servis.status === 'Sudah Diambil') && (
+              <button
+                type="button"
+                onClick={() => void handleKirimUlangWa()}
+                disabled={mengirimWa}
+                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {mengirimWa ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin text-slate-500" />
+                    Mengirim…
+                  </>
+                ) : (
+                  'Kirim Ulang WhatsApp'
+                )}
+              </button>
+            )}
+          </div>
+
+          {pesanSuksesWa && (
+            <div role="status" className="mt-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800">
+              {pesanSuksesWa}
+            </div>
+          )}
+
+          {galatWa && (
+            <div role="alert" className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+              {galatWa}
+            </div>
+          )}
+
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            {riwayatNotif && riwayatNotif.length > 0 ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      riwayatNotif[0].status === 'berhasil'
+                        ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 ring-inset'
+                        : 'bg-red-50 text-red-700 ring-1 ring-red-600/20 ring-inset'
+                    }`}
+                  >
+                    {riwayatNotif[0].status === 'berhasil' ? 'Terkirim' : 'Gagal'}
+                  </span>
+                  <span className="text-xs text-slate-600">
+                    {formatTanggalWaktu(riwayatNotif[0].dibuat_pada)} ke{' '}
+                    <span className="font-medium text-slate-800">{riwayatNotif[0].nomor_tujuan}</span>
+                  </span>
+                </div>
+                {riwayatNotif[0].status === 'gagal' && riwayatNotif[0].respons_gateway && (
+                  <p className="rounded bg-red-50 p-2 text-xs text-red-700">
+                    Keterangan: {riwayatNotif[0].respons_gateway}
+                  </p>
+                )}
+
+                {riwayatNotif.length > 1 && (
+                  <details className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-600">
+                    <summary className="cursor-pointer font-medium text-slate-700 hover:underline">
+                      Lihat semua riwayat pengiriman ({riwayatNotif.length})
+                    </summary>
+                    <ul className="mt-2 space-y-2 pl-2">
+                      {riwayatNotif.map((n) => (
+                        <li key={n.id} className="border-l-2 border-slate-200 pl-3">
+                          <span
+                            className={`font-semibold ${
+                              n.status === 'berhasil' ? 'text-emerald-700' : 'text-red-600'
+                            }`}
+                          >
+                            {n.status === 'berhasil' ? 'Berhasil' : 'Gagal'}
+                          </span>{' '}
+                          · {formatTanggalWaktu(n.dibuat_pada)} ke {n.nomor_tujuan}
+                          {n.respons_gateway && n.status === 'gagal' ? (
+                            <p className="text-slate-500">{n.respons_gateway}</p>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400">Belum ada pengiriman notifikasi tercatat.</p>
+            )}
+          </div>
+        </section>
       )}
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react'
+import { kirimNotifikasiWa, type HasilKirimWa } from './notifikasi'
 import { formatNopol } from './nopol'
 import { bisaDibatalkan } from './statusServis'
 import { ubahStatus } from './servis'
-import type { PesanServis } from './servisErrors'
+import type { Hasil, PesanServis } from './servisErrors'
 import { useUndoToast } from './useUndoToast'
 import type { StatusServis } from '../types/database'
 
@@ -12,7 +13,10 @@ export type ServisRingkas = { id: string; nomor_polisi: string }
  * Umpan balik setelah ubah status (daftar & detail memakai logika yang sama):
  * toast "Batalkan" untuk langkah maju, pesan error, dan muat ulang data.
  */
-export function useStatusFeedback(muatUlang: () => void) {
+export function useStatusFeedback(
+  muatUlang: () => void,
+  onNotifikasiSelesai?: (hasil: Hasil<HasilKirimWa>) => void,
+) {
   const { toast, tampilkan, tutup } = useUndoToast()
   const [galat, setGalat] = useState<PesanServis | null>(null)
 
@@ -31,6 +35,13 @@ export function useStatusFeedback(muatUlang: () => void) {
       muatUlang()
       const nopol = formatNopol(servis.nomor_polisi)
 
+      if (arah === 'maju' && ke === 'Selesai Dikerjakan') {
+        void kirimNotifikasiWa(servis.id).then((hasil) => {
+          onNotifikasiSelesai?.(hasil)
+          muatUlang()
+        })
+      }
+
       if (arah === 'maju' && bisaDibatalkan(ke)) {
         tampilkan(`${nopol} → ${ke}`, () => {
           tutup()
@@ -45,7 +56,7 @@ export function useStatusFeedback(muatUlang: () => void) {
         tampilkan(`${nopol} dikembalikan ke ${ke}`)
       }
     },
-    [handleGagal, muatUlang, tampilkan, tutup],
+    [handleGagal, muatUlang, onNotifikasiSelesai, tampilkan, tutup],
   )
 
   return { toast, tutupToast: tutup, galat, setGalat, handleBerhasil, handleGagal }
