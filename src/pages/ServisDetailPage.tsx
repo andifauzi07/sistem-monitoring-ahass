@@ -8,10 +8,10 @@ import { StatusBadge } from '../components/StatusBadge'
 import { UndoToast } from '../components/UndoToast'
 import { formatKilometer, formatTanggalWaktu } from '../lib/format'
 import { ambilMekanikTersedia } from '../lib/mekanik'
-import { ambilRiwayatNotifikasi, kirimNotifikasiWa } from '../lib/notifikasi'
+import { ambilRiwayatNotifikasi, kirimNotifikasiWa, type HasilKirimWa } from '../lib/notifikasi'
 import { formatNopol } from '../lib/nopol'
 import { ambilServis, hapusServis, tugaskanMekanik } from '../lib/servis'
-import type { PesanServis } from '../lib/servisErrors'
+import type { Hasil, PesanServis } from '../lib/servisErrors'
 import { isAktif, statusSebelumnya } from '../lib/statusServis'
 import { useMuat } from '../lib/useMuat'
 import { useSinyalRealtime } from '../lib/useSinyalRealtime'
@@ -40,11 +40,35 @@ export function ServisDetailPage() {
     muatUlangNotif()
   }, [muatUlangServis, muatUlangNotif])
 
-  const { toast, tutupToast, galat, setGalat, handleBerhasil, handleGagal } = useStatusFeedback(muatSemua)
-
   const [mengirimWa, setMengirimWa] = useState(false)
+  const [sedangKirimOtomatis, setSedangKirimOtomatis] = useState(false)
   const [galatWa, setGalatWa] = useState<string | null>(null)
   const [pesanSuksesWa, setPesanSuksesWa] = useState<string | null>(null)
+
+  const handleNotifikasiMulai = useCallback(() => {
+    setSedangKirimOtomatis(true)
+    setGalatWa(null)
+    setPesanSuksesWa(null)
+  }, [])
+
+  const handleNotifikasiSelesai = useCallback((hasil: Hasil<HasilKirimWa>) => {
+    setSedangKirimOtomatis(false)
+    if (hasil.error) {
+      setGalatWa(hasil.error.pesan)
+    } else if (hasil.data.status === 'gagal') {
+      setGalatWa(hasil.data.error || 'Pengiriman notifikasi WhatsApp gagal.')
+    } else {
+      setPesanSuksesWa('Notifikasi WhatsApp berhasil dikirim ke pelanggan.')
+    }
+  }, [])
+
+  const { toast, tutupToast, galat, setGalat, handleBerhasil, handleGagal } = useStatusFeedback(
+    muatSemua,
+    handleNotifikasiSelesai,
+    handleNotifikasiMulai,
+  )
+
+  const isSedangKirim = sedangKirimOtomatis || mengirimWa
 
   const [konfirmasiHapus, setKonfirmasiHapus] = useState(false)
   const [menghapus, setMenghapus] = useState(false)
@@ -85,7 +109,7 @@ export function ServisDetailPage() {
   }
 
   async function handleKirimUlangWa() {
-    if (mengirimWa || !servis) return
+    if (isSedangKirim || !servis) return
     setMengirimWa(true)
     setGalatWa(null)
     setPesanSuksesWa(null)
@@ -294,21 +318,25 @@ export function ServisDetailPage() {
               </p>
             </div>
             {(servis.status === 'Selesai Dikerjakan' || servis.status === 'Sudah Diambil') && (
-              <button
-                type="button"
-                onClick={() => void handleKirimUlangWa()}
-                disabled={mengirimWa}
-                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {mengirimWa ? (
-                  <>
-                    <LoaderCircle className="size-4 animate-spin text-slate-500" />
-                    Mengirim…
-                  </>
-                ) : (
-                  'Kirim Ulang WhatsApp'
-                )}
-              </button>
+              <>
+                {isSedangKirim ? (
+                  <span
+                    role="status"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-md bg-amber-50 px-3.5 py-2 text-xs font-medium text-amber-800 ring-1 ring-amber-600/20 ring-inset"
+                  >
+                    <LoaderCircle className="size-4 animate-spin text-amber-600" />
+                    Sedang mengirim notifikasi WhatsApp ke pelanggan…
+                  </span>
+                ) : riwayatNotif && riwayatNotif.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleKirimUlangWa()}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Kirim Ulang WhatsApp
+                  </button>
+                ) : null}
+              </>
             )}
           </div>
 

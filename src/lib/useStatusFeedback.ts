@@ -16,6 +16,7 @@ export type ServisRingkas = { id: string; nomor_polisi: string }
 export function useStatusFeedback(
   muatUlang: () => void,
   onNotifikasiSelesai?: (hasil: Hasil<HasilKirimWa>) => void,
+  onNotifikasiMulai?: () => void,
 ) {
   const { toast, tampilkan, tutup } = useUndoToast()
   const [galat, setGalat] = useState<PesanServis | null>(null)
@@ -36,6 +37,7 @@ export function useStatusFeedback(
       const nopol = formatNopol(servis.nomor_polisi)
 
       if (arah === 'maju' && ke === 'Selesai Dikerjakan') {
+        onNotifikasiMulai?.()
         void kirimNotifikasiWa(servis.id).then((hasil) => {
           onNotifikasiSelesai?.(hasil)
           muatUlang()
@@ -56,7 +58,7 @@ export function useStatusFeedback(
         tampilkan(`${nopol} dikembalikan ke ${ke}`)
       }
     },
-    [handleGagal, muatUlang, onNotifikasiSelesai, tampilkan, tutup],
+    [handleGagal, muatUlang, onNotifikasiMulai, onNotifikasiSelesai, tampilkan, tutup],
   )
 
   return { toast, tutupToast: tutup, galat, setGalat, handleBerhasil, handleGagal }
