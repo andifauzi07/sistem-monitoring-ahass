@@ -32,7 +32,14 @@ export function LoginPage() {
 
   return (
     <div className="mx-auto max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 className="text-xl font-bold text-slate-900">Masuk Service Advisor</h1>
+      <div className="flex flex-col items-center text-center">
+        <img
+          src="/logo.jpeg"
+          alt="Logo AHASS Mamuju"
+          className="size-16 shrink-0 aspect-square rounded-xl object-contain shadow-sm ring-1 ring-slate-200"
+        />
+        <h1 className="mt-3 text-xl font-bold text-slate-900">Masuk Service Advisor</h1>
+      </div>
 
       {!isSupabaseConfigured && (
         <p className="mt-3 rounded-md bg-amber-50 p-3 text-sm text-amber-800">

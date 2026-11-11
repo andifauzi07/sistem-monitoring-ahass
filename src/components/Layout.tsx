@@ -57,11 +57,11 @@ function BrandMark() {
 	return (
 		<Link
 			to="/"
-			className="flex min-w-0 items-center gap-2">
+			className="flex min-w-0 items-center gap-2.5">
 			<img
-				src="/favicon.svg"
-				alt=""
-				className="size-8 shrink-0 rounded-md ring-1 ring-white/30"
+				src="/logo.jpeg"
+				alt="Logo AHASS Mamuju"
+				className="size-9 shrink-0 aspect-square rounded-md object-contain ring-1 ring-white/30"
 			/>
 			<span className="min-w-0 leading-tight">
 				<span className="block truncate text-sm font-bold sm:text-base">AHASS Mamuju</span>
@@ -98,8 +98,21 @@ export function Layout() {
 						className={`hidden shrink-0 bg-brand-600 text-white transition-[width] duration-150 sm:sticky sm:top-0 sm:flex sm:h-dvh sm:flex-col sm:self-start ${
 							sidebarCollapsed ? 'sm:w-16' : 'sm:w-56'
 						}`}>
-						<div className={`flex items-center px-3 py-4 ${sidebarCollapsed ? 'justify-center' : 'justify-between gap-2'}`}>
-							{!sidebarCollapsed && <BrandMark />}
+						<div className={`flex items-center px-3 py-4 ${sidebarCollapsed ? 'flex-col gap-3 justify-center' : 'justify-between gap-2'}`}>
+							{sidebarCollapsed ? (
+								<Link
+									to="/"
+									title="AHASS Mamuju - Monitoring Servis"
+									className="flex size-9 shrink-0 items-center justify-center">
+									<img
+										src="/logo.jpeg"
+										alt="Logo AHASS Mamuju"
+										className="size-9 shrink-0 aspect-square rounded-md object-contain ring-1 ring-white/30"
+									/>
+								</Link>
+							) : (
+								<BrandMark />
+							)}
 							<button
 								type="button"
 								onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
